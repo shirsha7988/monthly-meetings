@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ניתוח פגישות — ענבר</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{--hero:#2d5a3d;--ac:#2d5a3d;--al:#e8f0ea;--bg:#f7f5f0;--sf:#fff;--sf2:#f0ede7;--bd:#e2ddd6;--tx:#1a1714;--mu:#7a7369;--fa:#b0a89e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;min-height:100vh}
+.hero{background:var(--hero);color:#fff;padding:2.2rem 2rem 1.8rem}
+.hero-in{max-width:920px;margin:0 auto}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.4rem}
+.hero h1{font-size:1.7rem;font-weight:300;margin-bottom:3px}
+.hero h1 strong{font-weight:600}
+.hero p{font-size:13px;color:rgba(255,255,255,.5)}
+.main{max-width:920px;margin:0 auto;padding:1.75rem 1.5rem 3rem}
+.btn{font-family:'Heebo',sans-serif;font-size:13px;padding:6px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--sf2)}
+.btn-ac{background:var(--ac);color:#fff;border-color:var(--ac)}
+.btn-ac:hover{background:#234a30}
+.btn-hero{background:var(--hero);color:#fff;border-color:var(--hero)}
+.btn-hero:hover{opacity:.9}
+.btn-red{background:#c0392b;color:#fff;border-color:#c0392b}
+.btn-red:hover{background:#a93226}
+.btn-sm{font-size:12px;padding:4px 13px}
+.hidden{display:none!important}
+.upload{background:var(--sf);border:1.5px dashed var(--bd);border-radius:16px;padding:2.5rem 2rem;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:1.25rem}
+.upload:hover,.upload.over{border-color:var(--ac);background:var(--al)}
+.upload-ico{width:50px;height:50px;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;margin:0 auto .9rem;font-size:22px}
+.upload h3{font-size:15px;font-weight:500;margin-bottom:4px}
+.upload p{font-size:13px;color:var(--mu);margin-bottom:.75rem}
+.hint{font-size:12px;color:var(--fa);background:var(--sf2);border-radius:8px;padding:8px 14px;display:inline-block;line-height:1.9}
+#fi{display:none}
+.fcard{background:var(--sf);border:1px solid var(--bd);border-radius:16px;overflow:hidden;margin-bottom:1.25rem}
+.toolbar{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid var(--bd);background:var(--sf2);flex-wrap:wrap}
+.toolbar input[type=text]{font-family:'Heebo',sans-serif;font-size:13px;padding:5px 11px;border-radius:7px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);flex:1;min-width:150px}
+.tbl-wrap{overflow-x:auto;max-height:430px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{position:sticky;top:0;text-align:right;padding:8px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--mu);background:var(--sf2);border-bottom:1px solid var(--bd);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--sf2)}
+tbody tr.del{opacity:.32;text-decoration:line-through;background:#fff5f5!important}
+tbody tr.sel{background:#eef3fa!important}
+td{padding:7px 10px;vertical-align:middle}
+.subj{max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:13px}
+.row-cb{width:15px;height:15px;cursor:pointer;accent-color:var(--hero)}
+select.ed{font-family:'Heebo',sans-serif;font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;width:100%}
+.xbtn{width:26px;height:26px;border-radius:6px;border:1px solid var(--bd);background:transparent;cursor:pointer;color:var(--fa);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.xbtn:hover{background:#fff0f0;border-color:#e74c3c;color:#e74c3c}
+.xbtn.un{color:var(--ac);border-color:var(--ac)}
+.xbtn.un:hover{background:var(--al)}
+.cbar{padding:11px 15px;border-top:1px solid var(--bd);background:var(--sf2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cbar p{font-size:13px;color:var(--mu)}
+.dash-hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem}
+.dash-hdr h2{font-size:16px;font-weight:500}
+.dash-hdr p{font-size:12px;color:var(--mu)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.met{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:.8rem 1rem}
+.met-l{font-size:11px;color:var(--mu);margin-bottom:3px}
+.met-v{font-size:21px;font-weight:300}
+.met-v strong{font-weight:600}
+.met-s{font-size:11px;color:var(--fa);margin-top:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:1rem 1.2rem;margin-bottom:14px}
+.ct{font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--mu);text-transform:uppercase;margin-bottom:.9rem}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+.bl{width:128px;text-align:right;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.bt{flex:1;height:19px;background:var(--sf2);border-radius:4px;overflow:hidden}
+.bf{height:100%;border-radius:4px;transition:width .5s ease}
+.bn{width:24px;text-align:left;font-weight:500;color:var(--tx)}
+.pie-leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px;color:var(--mu)}
+.pie-leg span{display:flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.ins-row{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--bd);font-size:13px;color:var(--tx);line-height:1.5}
+.ins-row:last-child{border-bottom:none}
+.ins-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px}
+.ic-b{background:#e6edf5}.ic-g{background:var(--al)}.ic-a{background:#faeeda}
+/* HISTORY */
+.month-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem}
+.month-tab{font-family:'Heebo',sans-serif;font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid var(--bd);background:var(--sf);color:var(--mu);cursor:pointer;transition:all .15s}
+.month-tab:hover{background:var(--sf2)}
+.month-tab.active{background:var(--hero);color:#fff;border-color:var(--hero)}
+.compare-card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:1rem 1.2rem;margin-bottom:14px}
+.compare-selects{display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.compare-selects select{font-family:'Heebo',sans-serif;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);flex:1}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.compare-col{background:var(--sf2);border-radius:12px;padding:1rem}
+.compare-col h3{font-size:13px;font-weight:600;color:var(--hero);margin-bottom:.75rem;text-align:center}
+.compare-stat{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.compare-stat:last-child{border-bottom:none}
+.compare-stat span:last-child{font-weight:500}
+.saving-msg{font-size:12px;color:var(--ac);margin-right:auto}
+@media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}.row2{grid-template-columns:1fr}.compare-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-in">
+    <div class="lbl">קרן פילנתרופית — ניהול זמן</div>
+    <h1><strong>ענבר</strong> — ניתוח פגישות חודשי</h1>
+    <p>ייבוא יומן Outlook, סינון, תיקון סיווגים, וניתוח</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- NAV TABS -->
+  <div style="display:flex;gap:6px;margin-bottom:1.5rem;border-bottom:1px solid var(--bd);padding-bottom:1rem;align-items:center">
+    <button class="btn btn-sm btn-hero" onclick="showTab('upload')" id="nav-upload">📥 העלאה חדשה</button>
+    <button class="btn btn-sm" onclick="showTab('history')" id="nav-history">📅 היסטוריה והשוואה</button>
+    <a href="https://shirsha7988.github.io/monthly-meetings/" class="btn btn-sm" style="margin-right:auto;text-decoration:none">🏠 עמוד הבית</a>
+  </div>
+
+  <!-- TAB: UPLOAD -->
+  <div id="tab-upload">
+    <div id="step-upload">
+      <div style="margin-bottom:.75rem">
+        <div style="font-size:15px;font-weight:500">שלב 1 — ייבוא קובץ</div>
+        <div style="font-size:12px;color:var(--mu);margin-top:2px">העלי קובץ CSV מ-Outlook או קובץ מתוקן שייצאת קודם</div>
+      </div>
+      <label for="fi">
+        <div class="upload" id="dz">
+          <div class="upload-ico">📥</div>
+          <h3>לחצי כאן לבחירת קובץ CSV</h3>
+          <p>או גרירי קובץ לכאן</p>
+          <div class="hint">קובץ ייצוא מ-Outlook, או קובץ מתוקן שייצאת בפעם הקודמת</div>
+        </div>
+      </label>
+      <input type="file" id="fi" accept=".csv" style="display:none">
+      <div style="text-align:center;margin-top:.5rem">
+        <button class="btn btn-sm" onclick="loadDemo()">טעיני נתוני דמו — אפריל 2026 (ענבר)</button>
+      </div>
+    </div>
+
+    <div id="step-filter" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem">
+        <div>
+          <div style="font-size:15px;font-weight:500">שלב 2 — סינון ועריכת סיווגים</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">מחקי שורות לא רלוונטיות ותקני סיווגים</div>
+        </div>
+        <span id="cnt-badge" style="font-size:12px;background:var(--al);color:var(--ac);padding:3px 10px;border-radius:20px;font-weight:500"></span>
+      </div>
+      <div class="fcard">
+        <div class="toolbar">
+          <input type="text" id="srch" placeholder="חיפוש לפי נושא..." oninput="filterTable()">
+          <button class="btn btn-sm btn-red hidden" id="btn-del-sel" onclick="deleteSelected()">מחק נבחרות (<span id="sel-cnt">0</span>)</button>
+          <button class="btn btn-sm" onclick="restoreAll()">שחזר הכל</button>
+          <span id="del-lbl" class="hidden" style="font-size:12px;color:#c0392b;margin-right:auto"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:34px;text-align:center"><input type="checkbox" class="row-cb" id="cb-all" onclick="toggleAll(this)"></th>
+                <th>תאריך</th><th>נושא הפגישה</th>
+                <th style="width:148px">סיווג</th>
+                <th style="width:95px">פנימי/חיצוני</th>
+                <th style="width:82px">פורמט</th>
+                <th style="width:30px"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="cbar">
+          <p id="cbar-txt"></p>
+          <div style="display:flex;gap:8px;margin-right:auto;flex-wrap:wrap;align-items:center">
+            <span id="saving-msg" class="saving-msg hidden"></span>
+            <button class="btn btn-sm" onclick="exportCSV()">📥 ייצאי CSV מתוקן</button>
+            <button class="btn btn-sm btn-ac" onclick="goAnalyze()">ניתוח נתונים →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-dash" class="hidden">
+      <div class="dash-hdr">
+        <div><h2 id="dash-title"></h2><p>ניתוח ניצול זמן חודשי</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="goFilter()">← חזרה לעריכה</button>
+          <button class="btn btn-sm" onclick="exportCSV()">📥 ייצאי CSV</button>
+          <button class="btn btn-sm btn-ac" onclick="saveMonth()" id="btn-save">💾 שמרי חודש זה</button>
+        </div>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <div class="row2">
+        <div class="card" style="margin-bottom:0">
+          <div class="ct">פגישות לפי סיווג</div>
+          <div id="bar-chart"></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="ct">פנימי / חיצוני</div>
+          <div class="pie-leg" id="pie-leg"></div>
+          <div style="position:relative;width:100%;height:175px"><canvas id="donut"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">זום / פרונטלי</div>
+        <div style="position:relative;width:100%;height:115px"><canvas id="bar2"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ct">תובנות</div>
+        <div id="insights"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: HISTORY -->
+  <div id="tab-history" class="hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:10px">
+      <div style="font-size:15px;font-weight:500">היסטוריה חודשית</div>
+      <span id="hist-status" style="font-size:12px;color:var(--mu)"></span>
+    </div>
+
+    <!-- month pills -->
+    <div id="month-tabs" class="month-tabs"></div>
+
+    <!-- single month view -->
+    <div id="hist-single" class="hidden">
+      <div class="metrics" id="hist-metrics"></div>
+      <div class="card">
+        <div class="ct">פגישות לפי סיווג</div>
+        <div id="hist-bars"></div>
+      </div>
+    </div>
+
+    <!-- compare -->
+    <div class="compare-card">
+      <div class="ct">השוואה בין חודשים</div>
+      <div class="compare-selects">
+        <select id="cmp-a" onchange="renderCompare()"><option value="">בחרי חודש א'</option></select>
+        <span style="font-size:14px;color:var(--mu)">מול</span>
+        <select id="cmp-b" onchange="renderCompare()"><option value="">בחרי חודש ב'</option></select>
+      </div>
+      <div id="compare-result"></div>
+    </div>
+
+    <div id="hist-empty" style="text-align:center;padding:3rem;color:var(--mu);font-size:14px">
+      עדיין אין חודשים שמורים. העלי CSV ולחצי "שמרי חודש זה" בדשבורד.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const AIRTABLE_TOKEN = 'patLwO1jUQzh4zg9y.bbecf951be058596fd9988c08eb5e4e858c86b48fdceb42282b6f5c2a46c8e7b';
+const AIRTABLE_BASE  = 'appumZanvo1EY3VnR';
+const AIRTABLE_TABLE = 'tblF8ngz5lHqt3nEk';
+const PERSON = 'ענבר';
+
+const SIVS   = ['פגישה פנימית עובדים','פגישה פנימית הנהלה','אסטרטגי','שותפות','חברי בורד','הפרייה הדדית','ליווי עמותות','אחר'];
+const COLORS = ['#1e3a5f','#0a6e8a','#4a3ab5','#2d5a3d','#c0392b','#d4820a','#8b4513','#888'];
+const KW = {
+  'אסטרטגי':['אסטרטג','תוכנית עבודה','חזון','מדיניות','תלת שנתי','דו"ח שנתי'],
+  'שותפות':['שותפות','שיתוף','ג\'וינט','jfna','יד הנדיב','ראשית','עוגן','ועדה מייעצת','בעלי עניין'],
+  'הפרייה הדדית':['כנס','הפרייה','למידה','השתלמות'],
+  'ליווי עמותות':['עמות','ליווי','מדויקת','ai','בינה מלאכותית'],
+  'חברי בורד':['בורד','דירקטוריון'],
+  'פגישה פנימית הנהלה':['הנהלה','מנכ"ל','מנהל','דירקטורית'],
+};
+function classify(s){if(!s)return 'אחר';const l=s.toLowerCase();for(const[c,ks]of Object.entries(KW))if(ks.some(k=>l.includes(k.toLowerCase())))return c;return 'פגישה פנימית עובדים';}
+function inout(s){return['חיצוני','ג\'וינט','jfna','יד הנדיב','ראשית','עוגן','כנס','אפרת','נעמי','מאיה'].some(k=>(s||'').toLowerCase().includes(k.toLowerCase()))?'חיצוני':'פנימי';}
+
+let rows=[],srchTerm='',selIds=new Set(),lastIdx=null,donutC=null,bar2C=null,currentMonth='';
+let history=[];
+
+// ── AIRTABLE ──────────────────────────────────────────
+const AT_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}`;
+const AT_HEADERS = {'Authorization':'Bearer '+AIRTABLE_TOKEN,'Content-Type':'application/json'};
+
+async function atFetch(method,body,id){
+  const url = id ? AT_URL+'/'+id : AT_URL;
+  const opts = {method, headers:AT_HEADERS};
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(url,opts);
+  return res.json();
+}
+
+async function loadHistory(){
+  try{
+    document.getElementById('hist-status').textContent='טוען...';
+    const data = await atFetch('GET');
+    history = (data.records||[])
+      .filter(r=>r.fields.person===PERSON)
+      .map(r=>({id:r.id, month:r.fields.month, summary:JSON.parse(r.fields.summary||'{}')}))
+      .sort((a,b)=>a.month.localeCompare(b.month));
+    document.getElementById('hist-status').textContent=history.length+' חודשים שמורים';
+    renderHistory();
+  }catch(e){
+    document.getElementById('hist-status').textContent='שגיאה בטעינה — בדקי את ה-Token';
+  }
+}
+
+async function saveMonth(){
+  const active=rows.filter(r=>!r.del);
+  const sum = calcSummary(active);
+  const btn=document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='שומר...';
+  try{
+    const existing = history.find(h=>h.month===currentMonth);
+    if(existing){
+      await atFetch('PATCH',{fields:{summary:JSON.stringify(sum)}},existing.id);
+    } else {
+      await atFetch('POST',{records:[{fields:{person:PERSON,month:currentMonth,summary:JSON.stringify(sum)}}]});
+    }
+    btn.textContent='✅ נשמר!';
+    setTimeout(()=>{btn.disabled=false;btn.textContent='💾 שמרי חודש זה';},2000);
+    await loadHistory();
+  }catch(e){
+    btn.textContent='שגיאה — נסי שוב';
+    setTimeout(()=>{btn.disabled=false;btn.textContent='💾 שמרי חודש זה';},2000);
+  }
+}
+
+function calcSummary(active){
+  const total=active.length;
+  const sc={}; SIVS.forEach(s=>sc[s]=0);
+  let pin=0,pout=0,zoom=0,front=0;
+  active.forEach(r=>{
+    if(sc[r.siv]!==undefined)sc[r.siv]++;
+    r.inout==='פנימי'?pin++:pout++;
+    r.fmt==='זום'?zoom++:front++;
+  });
+  return {total,pin,pout,zoom,front,sc};
+}
+
+// ── TABS ──────────────────────────────────────────────
+function showTab(t){
+  document.getElementById('tab-upload').classList.toggle('hidden',t!=='upload');
+  document.getElementById('tab-history').classList.toggle('hidden',t!=='history');
+  document.getElementById('nav-upload').className='btn btn-sm '+(t==='upload'?'btn-hero':'');
+  document.getElementById('nav-history').className='btn btn-sm '+(t==='history'?'btn-hero':'');
+  if(t==='history') loadHistory();
+}
+
+// ── HISTORY TAB ───────────────────────────────────────
+let selectedMonth=null;
+function renderHistory(){
+  const tabs=document.getElementById('month-tabs');
+  const empty=document.getElementById('hist-empty');
+  const single=document.getElementById('hist-single');
+  if(history.length===0){empty.classList.remove('hidden');tabs.innerHTML='';single.classList.add('hidden');return;}
+  empty.classList.add('hidden');
+  tabs.innerHTML=history.map(h=>`<button class="month-tab${selectedMonth===h.month?' active':''}" onclick="selectMonth('${h.month}')">${h.month}</button>`).join('');
+  // populate compare selects
+  ['cmp-a','cmp-b'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    sel.innerHTML='<option value="">בחרי חודש</option>'+history.map(h=>`<option value="${h.month}"${h.month===cur?' selected':''}>${h.month}</option>`).join('');
+  });
+  if(selectedMonth) renderSingleMonth(selectedMonth);
+}
+
+function selectMonth(m){
+  selectedMonth=m;
+  document.querySelectorAll('.month-tab').forEach(t=>t.classList.toggle('active',t.textContent===m));
+  renderSingleMonth(m);
+}
+
+function renderSingleMonth(m){
+  const h=history.find(x=>x.month===m); if(!h) return;
+  const s=h.summary, single=document.getElementById('hist-single');
+  single.classList.remove('hidden');
+  const pct=v=>s.total?Math.round(v/s.total*100):0;
+  document.getElementById('hist-metrics').innerHTML=`
+    <div class="met"><div class="met-l">סה"כ פגישות</div><div class="met-v"><strong>${s.total}</strong></div><div class="met-s">${m}</div></div>
+    <div class="met"><div class="met-l">פנימיות</div><div class="met-v"><strong>${s.pin}</strong></div><div class="met-s">${pct(s.pin)}%</div></div>
+    <div class="met"><div class="met-l">חיצוניות</div><div class="met-v"><strong>${s.pout}</strong></div><div class="met-s">${pct(s.pout)}%</div></div>
+    <div class="met"><div class="met-l">בזום</div><div class="met-v"><strong>${s.zoom}</strong></div><div class="met-s">${pct(s.zoom)}%</div></div>`;
+  const mx=Math.max(...SIVS.map(sv=>s.sc[sv]||0),1);
+  document.getElementById('hist-bars').innerHTML=SIVS.filter(sv=>(s.sc[sv]||0)>0).map(sv=>`
+    <div class="br"><div class="bl">${sv}</div><div class="bt"><div class="bf" style="width:${Math.round((s.sc[sv]||0)/mx*100)}%;background:${COLORS[SIVS.indexOf(sv)]}"></div></div><div class="bn">${s.sc[sv]||0}</div></div>`).join('');
+}
+
+function renderCompare(){
+  const ma=document.getElementById('cmp-a').value;
+  const mb=document.getElementById('cmp-b').value;
+  const res=document.getElementById('compare-result');
+  if(!ma||!mb){res.innerHTML='';return;}
+  const ha=history.find(x=>x.month===ma);
+  const hb=history.find(x=>x.month===mb);
+  if(!ha||!hb){return;}
+  const sa=ha.summary, sb=hb.summary;
+  const diff=(a,b)=>{const d=a-b;return d===0?'—':d>0?`<span style="color:#2d5a3d">+${d}</span>`:`<span style="color:#c0392b">${d}</span>`;};
+  res.innerHTML=`<div class="compare-grid">
+    <div class="compare-col"><h3>${ma}</h3>
+      <div class="compare-stat"><span>סה"כ פגישות</span><span>${sa.total}</span></div>
+      <div class="compare-stat"><span>פנימיות</span><span>${sa.pin}</span></div>
+      <div class="compare-stat"><span>חיצוניות</span><span>${sa.pout}</span></div>
+      <div class="compare-stat"><span>זום</span><span>${sa.zoom}</span></div>
+      ${SIVS.filter(s=>(sa.sc[s]||0)>0||(sb.sc[s]||0)>0).map(s=>`<div class="compare-stat"><span>${s}</span><span>${sa.sc[s]||0}</span></div>`).join('')}
+    </div>
+    <div class="compare-col"><h3>${mb}</h3>
+      <div class="compare-stat"><span>סה"כ פגישות</span><span>${sb.total} ${diff(sb.total,sa.total)}</span></div>
+      <div class="compare-stat"><span>פנימיות</span><span>${sb.pin} ${diff(sb.pin,sa.pin)}</span></div>
+      <div class="compare-stat"><span>חיצוניות</span><span>${sb.pout} ${diff(sb.pout,sa.pout)}</span></div>
+      <div class="compare-stat"><span>זום</span><span>${sb.zoom} ${diff(sb.zoom,sa.zoom)}</span></div>
+      ${SIVS.filter(s=>(sa.sc[s]||0)>0||(sb.sc[s]||0)>0).map(s=>`<div class="compare-stat"><span>${s}</span><span>${sb.sc[s]||0} ${diff(sb.sc[s]||0,sa.sc[s]||0)}</span></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ── DEMO ──────────────────────────────────────────────
+const DEMO=[
+  {date:'1/4',subject:'פגישת צוות שבועית'},{date:'2/4',subject:'שיחה עם יד הנדיב — שיתוף פעולה'},
+  {date:'3/4',subject:'גיבוש תוכנית עבודה שנתית'},{date:'4/4',subject:'תזכורת — הגשת דו"ח'},
+  {date:'6/4',subject:'כנס גיל הרך — ירושלים'},{date:'7/4',subject:'ליווי עמות מדויקת + AI'},
+  {date:'7/4',subject:'חג פסח — סגור משרד'},{date:'8/4',subject:'עדי + ענת — קול קורא'},
+  {date:'9/4',subject:'פגישת JFNA'},{date:'10/4',subject:'בורד — דיון תקציבי'},
+  {date:'13/4',subject:'שיחת אסטרטגיה עם ראשית'},{date:'14/4',subject:'היערכות לקול קורא'},
+  {date:'15/4',subject:'פגישה עם אפרת'},{date:'16/4',subject:'עדכון תוכנית תלת שנתית'},
+  {date:'22/4',subject:'ועדה מייעצת'},{date:'23/4',subject:'הפרייה הדדית — סיגל יניב'},
+  {date:'27/4',subject:'פגישת הכנה לדו"ח שנתי'},{date:'28/4',subject:'צוות מנהלות תחום'},
+  {date:'29/4',subject:'שיחה עם ג\'וינט — פרויקט השבים'},{date:'30/4',subject:'סיכום חודש — עדי וענת'},
+];
+function loadDemo(){
+  rows=DEMO.map((r,i)=>({id:i,date:r.date,subject:r.subject,siv:classify(r.subject),inout:inout(r.subject),fmt:'פרונטלי',del:false}));
+  currentMonth='אפריל 2026'; go('filter');
+}
+
+// ── CSV ───────────────────────────────────────────────
+function parseCSV(txt){
+  const res=Papa.parse(txt,{header:true,skipEmptyLines:true});
+  const cols=res.meta.fields||[];
+  const isExp=cols.includes('סיווג');
+  return res.data.map((r,i)=>{
+    const subject=r['Subject']||r['נושא']||r['subject']||r['שם']||'';
+    const date=r['Start Date']||r['Start']||r['תאריך']||r['date']||'';
+    if(!subject.trim())return null;
+    const loc=r['Location']||r['מיקום']||'';
+    const isZoom=['zoom','teams','meet'].some(k=>(loc+subject).toLowerCase().includes(k));
+    return{id:i,date:date.slice(0,10)||'',subject:subject.trim(),
+      siv:isExp?(r['סיווג']||classify(subject)):classify(subject),
+      inout:isExp?(r['פנימי/חיצוני']||inout(subject)):inout(subject),
+      fmt:isExp?(r['פורמט']||'פרונטלי'):(isZoom?'זום':'פרונטלי'),del:false};
+  }).filter(Boolean);
+}
+
+document.getElementById('fi').addEventListener('change',function(e){
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=ev=>{rows=parseCSV(ev.target.result);currentMonth=f.name.replace(/\.csv$/i,'');go('filter');};
+  rd.readAsText(f,'utf-8');this.value='';
+});
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('over');
+  const f=e.dataTransfer.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=ev=>{rows=parseCSV(ev.target.result);currentMonth=f.name.replace(/\.csv$/i,'');go('filter');};
+  rd.readAsText(f,'utf-8');
+});
+
+function exportCSV(){
+  const active=rows.filter(r=>!r.del);
+  const csvRows=[['תאריך','נושא הפגישה','סיווג','פנימי/חיצוני','פורמט']];
+  active.forEach(r=>csvRows.push([r.date,r.subject,r.siv,r.inout,r.fmt]));
+  const csv='\uFEFF'+csvRows.map(r=>r.map(c=>'"'+(c||'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='פגישות-ענבר-'+currentMonth+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function go(step){
+  ['upload','filter','dash'].forEach(s=>document.getElementById('step-'+s).classList.toggle('hidden',s!==step));
+  if(step==='filter')renderTable();
+  if(step==='dash')renderDash();
+}
+function goFilter(){go('filter');}
+function goAnalyze(){go('dash');}
+
+// ── TABLE ─────────────────────────────────────────────
+function vis(){const t=srchTerm.toLowerCase();return rows.filter(r=>!t||r.subject.toLowerCase().includes(t));}
+function filterTable(){srchTerm=document.getElementById('srch').value.trim();lastIdx=null;renderTable();}
+function renderTable(){
+  const v=vis(),del=rows.filter(r=>r.del).length,active=rows.length-del;
+  document.getElementById('cnt-badge').textContent=active+' פגישות';
+  const dl=document.getElementById('del-lbl');
+  del>0?(dl.classList.remove('hidden'),dl.textContent=del+' מסומנות להסרה'):dl.classList.add('hidden');
+  document.getElementById('cbar-txt').innerHTML='<strong>'+active+'</strong> פגישות ייכנסו לניתוח.'+(del>0?' <span style="color:#c0392b">'+del+' יוסרו.</span>':'');
+  const sc=selIds.size,btn=document.getElementById('btn-del-sel');
+  sc>0?btn.classList.remove('hidden'):btn.classList.add('hidden');
+  document.getElementById('sel-cnt').textContent=sc;
+  const cbAll=document.getElementById('cb-all'),av=v.filter(r=>!r.del);
+  cbAll.checked=av.length>0&&av.every(r=>selIds.has(r.id));
+  cbAll.indeterminate=!cbAll.checked&&av.some(r=>selIds.has(r.id));
+  const sivOpts=s=>SIVS.map(sv=>`<option${sv===s?' selected':''}>${sv}</option>`).join('');
+  document.getElementById('tbody').innerHTML=v.map((r,vi)=>{
+    const isSel=selIds.has(r.id);
+    return`<tr class="${r.del?'del':''} ${isSel&&!r.del?'sel':''}" id="row-${r.id}">
+      <td style="text-align:center">${r.del?`<button class="xbtn un" onclick="toggleDel(${r.id})">↩</button>`:`<input type="checkbox" class="row-cb" ${isSel?'checked':''} onclick="handleCb(event,${r.id},${vi})">`}</td>
+      <td style="color:var(--fa);font-size:12px;white-space:nowrap">${r.date}</td>
+      <td><span class="subj" title="${r.subject}">${r.subject}</span></td>
+      <td><select class="ed" onchange="upd(${r.id},'siv',this.value)" ${r.del?'disabled':''}>${sivOpts(r.siv)}</select></td>
+      <td><select class="ed" onchange="upd(${r.id},'inout',this.value)" ${r.del?'disabled':''}><option${r.inout==='פנימי'?' selected':''}>פנימי</option><option${r.inout==='חיצוני'?' selected':''}>חיצוני</option></select></td>
+      <td><select class="ed" onchange="upd(${r.id},'fmt',this.value)" ${r.del?'disabled':''}><option${r.fmt==='פרונטלי'?' selected':''}>פרונטלי</option><option${r.fmt==='זום'?' selected':''}>זום</option></select></td>
+      <td>${!r.del?`<button class="xbtn" onclick="toggleDel(${r.id})">×</button>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+function handleCb(e,id,vi){
+  if(e.shiftKey&&lastIdx!==null){const v=vis();const a=Math.min(vi,lastIdx),b=Math.max(vi,lastIdx);for(let i=a;i<=b;i++){if(v[i]&&!v[i].del){e.target.checked?selIds.add(v[i].id):selIds.delete(v[i].id);}}}
+  else{e.target.checked?selIds.add(id):selIds.delete(id);}
+  lastIdx=vi;renderTable();
+}
+function toggleAll(cb){vis().filter(r=>!r.del).forEach(r=>cb.checked?selIds.add(r.id):selIds.delete(r.id));lastIdx=null;renderTable();}
+function deleteSelected(){selIds.forEach(id=>{const r=rows.find(x=>x.id===id);if(r)r.del=true;});selIds.clear();lastIdx=null;renderTable();}
+function toggleDel(id){const r=rows.find(x=>x.id===id);if(r){r.del=!r.del;selIds.delete(id);}renderTable();}
+function restoreAll(){rows.forEach(r=>r.del=false);selIds.clear();renderTable();}
+function upd(id,field,val){const r=rows.find(x=>x.id===id);if(r)r[field]=val;}
+
+// ── DASHBOARD ─────────────────────────────────────────
+function renderDash(){
+  const active=rows.filter(r=>!r.del),total=active.length;
+  document.getElementById('dash-title').textContent='ענבר — '+currentMonth;
+  const s=calcSummary(active);
+  const pct=v=>total?Math.round(v/total*100):0;
+  document.getElementById('metrics').innerHTML=`
+    <div class="met"><div class="met-l">סה"כ פגישות</div><div class="met-v"><strong>${total}</strong></div><div class="met-s">${currentMonth}</div></div>
+    <div class="met"><div class="met-l">פנימיות</div><div class="met-v"><strong>${s.pin}</strong></div><div class="met-s">${pct(s.pin)}%</div></div>
+    <div class="met"><div class="met-l">חיצוניות</div><div class="met-v"><strong>${s.pout}</strong></div><div class="met-s">${pct(s.pout)}%</div></div>
+    <div class="met"><div class="met-l">בזום</div><div class="met-v"><strong>${s.zoom}</strong></div><div class="met-s">${pct(s.zoom)}%</div></div>`;
+  const mx=Math.max(...SIVS.map(sv=>s.sc[sv]||0),1);
+  document.getElementById('bar-chart').innerHTML=SIVS.filter(sv=>s.sc[sv]>0).map(sv=>`
+    <div class="br"><div class="bl">${sv}</div><div class="bt"><div class="bf" style="width:${Math.round(s.sc[sv]/mx*100)}%;background:${COLORS[SIVS.indexOf(sv)]}"></div></div><div class="bn">${s.sc[sv]}</div></div>`).join('');
+  document.getElementById('pie-leg').innerHTML=`<span><span class="dot" style="background:#1e3a5f"></span>פנימי ${s.pin} (${pct(s.pin)}%)</span><span><span class="dot" style="background:#2d5a3d"></span>חיצוני ${s.pout} (${pct(s.pout)}%)</span>`;
+  if(donutC)donutC.destroy();
+  donutC=new Chart(document.getElementById('donut'),{type:'doughnut',data:{labels:['פנימי','חיצוני'],datasets:[{data:[s.pin,s.pout],backgroundColor:['#1e3a5f','#2d5a3d'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}}}});
+  if(bar2C)bar2C.destroy();
+  bar2C=new Chart(document.getElementById('bar2'),{type:'bar',data:{labels:['פרונטלי','זום'],datasets:[{data:[s.front,s.zoom],backgroundColor:['#d4820a','#4a3ab5'],borderRadius:5,barThickness:46}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:13,family:'Heebo'},color:'#7a7369'},grid:{display:false}},y:{ticks:{font:{size:11,family:'Heebo'},color:'#7a7369',stepSize:1},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+  const top=SIVS.reduce((a,b)=>s.sc[a]>=s.sc[b]?a:b);
+  document.getElementById('insights').innerHTML=`
+    <div class="ins-row"><div class="ins-ico ic-b">📊</div><span>הקטגוריה המרכזית: <strong>${top}</strong> — ${s.sc[top]} פגישות (${pct(s.sc[top])}%).</span></div>
+    <div class="ins-row"><div class="ins-ico ic-g">👥</div><span>${s.pout>s.pin?'רוב הפגישות חיצוניות':'רוב הפגישות פנימיות'} — ${Math.max(s.pin,s.pout)} מתוך ${total}.</span></div>
+    <div class="ins-row"><div class="ins-ico ic-a">💻</div><span>${s.zoom>s.front?'פגישות וירטואליות מובילות':'פגישות פרונטליות מובילות'} — ${Math.max(s.zoom,s.front)} מתוך ${total} (${pct(Math.max(s.zoom,s.front))}%).</span></div>`;
+}
+</script>
+</body>
+</html>
